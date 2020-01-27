@@ -682,7 +682,7 @@ Become a backer, and buy us a coffee (or perhaps lunch?) every month or so.
 <a href="https://opencollective.com/choo/backer/29/website" target="_blank"><img src="https://opencollective.com/choo/backer/29/avatar.svg"></a>
 
 ## License
-[MIT](https://tldrlegal.com/license/mit-license)
+[Apache-2.0](./LICENSE)
 
 [nanocomponent]: https://github.com/choojs/nanocomponent
 [nanolru]: https://github.com/s3ththompson/nanolru
