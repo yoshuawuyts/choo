@@ -1,3 +1,4 @@
+var split = require('split-require')
 var css = require('sheetify')
 var choo = require('../')
 
@@ -14,5 +15,7 @@ app.route('/', require('./views/main'))
 app.route('#active', require('./views/main'))
 app.route('#completed', require('./views/main'))
 app.route('*', require('./views/main'))
+
+app.experimentalAsyncRoute('/async', () => split('./views/async'))
 
 module.exports = app.mount('body')

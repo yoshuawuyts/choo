@@ -41,6 +41,8 @@ function Choo (opts) {
   this._hashEnabled = opts.hash === undefined ? false : opts.hash
   this._hasWindow = typeof window !== 'undefined'
   this._cache = opts.cache
+  this._asyncProxy = null // proxy for async routes
+  this._asyncRoutes = {}
   this._loaded = false
   this._stores = [ondomtitlechange]
   this._tree = null
@@ -79,9 +81,65 @@ function Choo (opts) {
 Choo.prototype.route = function (route, handler) {
   var routeTiming = nanotiming("choo.route('" + route + "')")
   assert.equal(typeof route, 'string', 'choo.route: route should be type string')
-  assert.equal(typeof handler, 'function', 'choo.handler: route should be type function')
+  assert.equal(typeof handler, 'function', 'choo.route: handler should be type function')
   this.router.on(route, handler)
   routeTiming()
+}
+
+// Register a route to be loaded asynchronously.
+Choo.prototype.experimentalAsyncRoute = function (route, loader) {
+  assert.equal(typeof route, 'string', 'choo.asyncRoute: asyncRoute should be type string')
+  assert.equal(typeof loader, 'function', 'choo.asyncRoute: loader should be type function')
+
+  var IDLE = 0
+  var LOADING = 1
+  var LOADED = 2
+
+  var loadingState = IDLE
+  var renderRoute = null
+  var view = null
+  var self = this
+
+  this.route(route, function (state, emit) {
+    if (!self._asyncProxy) self._initAsyncProxy()
+    // Begin loading the bundle on the first call
+    if (loadingState === IDLE) {
+      emit('choo:async-route-start', state.route)
+      renderRoute = state.route
+      loadingState = LOADING
+
+      var p = loader(onload)
+      assert(p && p.then, 'choo.asyncRoute: async route should return a Promise')
+      p.then(onload.bind(null, null), onload)
+      return self._asyncProxy
+    } else if (loadingState === LOADING) {
+      return self._asyncProxy
+    } else {
+      // loadingState === LOADED
+      return view(state, emit)
+    }
+
+    function onload (err, _view) {
+      if (err) {
+        emit('error', err)
+        loadingState = IDLE
+        return
+      }
+
+      emit('choo:async-route-end', renderRoute, _view)
+      loadingState = LOADED
+      view = _view
+
+      // Only rerender if we are still on the same route
+      if (state.route === renderRoute) emit('render')
+    }
+  })
+}
+
+Choo.prototype._initAsyncProxy = function () {
+  var tagName = this._tree ? this._tree.nodeName : 'body'
+  this._asyncProxy = document.createElement(tagName)
+  this._asyncProxy.isSameNode = function () { return true }
 }
 
 Choo.prototype.use = function (cb) {

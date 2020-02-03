@@ -15,7 +15,8 @@
     "todomvc-common": "^1.0.3"
   },
   "devDependencies": {
-    "bankai": "^9.0.0-rc6",
+    "bankai": "9.10.4",
+    "split-require": "^3.1.0",
     "standard": "^9.0.1"
   }
 }
